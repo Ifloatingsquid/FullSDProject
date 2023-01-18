@@ -1,0 +1,66 @@
+﻿@page "/chats/"
+@inject HttpClient _client
+@inject IJSRuntime js
+@attribute [Authorize]
+
+<h3 class="card-title">Dating Users</h3>
+
+@if (Chats == null)
+{
+    <div class="alert alert-info">Loading Dating Users...</div>
+}
+else
+{
+    <table class="table table-responsive">
+        <thead>
+            <tr>
+                <th>Match</th>
+                <th>Message</th>
+                <th>Timestamp</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var chat in Chats)
+            {
+                <tr>
+                    <td>@chat.Match</td>
+                    <td>@chat.MessageText</td>
+                    <td>@chat.ChatTimeStamp</td>
+                    <td>
+                        <a href=" /makes/view/@chat.Id" class=" btn btn-primary">
+                            <span class="oi oi-book"></span>
+                        </a>
+                        <a href=" /makes/edit/@chat.Id" class=" btn btn-warning">
+                            <span class="oi oi-pencil"></span>
+                        </a>
+                        <button class="btn btn-danger" @onclick="@(() => Delete(chat.Id))">
+                            <span class="oi oi-delete"></span>
+                        </button>
+                    </td>
+                </tr>
+            }
+
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Chat> Chats;
+
+    protected async override Task OnInitializedAsync()
+    {
+        Chats = await _client.GetFromJsonAsync<List<Chat>>($"{Endpoints.ChatsEndpoint}");
+    }
+
+    async Task Delete(int chatId)
+    {
+        var chat = Chats.First(q => q.Id == chatId);
+        var confirm = await js.InvokeAsync<bool>("confirm", $"Do you want to delete {chat.Id}?");
+        if (confirm)
+        {
+            await _client.DeleteAsync($"{Endpoints.ChatsEndpoint}/{chatId}");
+            await OnInitializedAsync();
+        }
+    }
+
+}

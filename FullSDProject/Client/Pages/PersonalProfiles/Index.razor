@@ -1,0 +1,70 @@
+﻿@page "/personalprofiles/"
+@inject HttpClient _client
+@inject IJSRuntime js
+@attribute [Authorize]
+
+<h3 class="card-title">Dating Users</h3>
+
+@if (PersonalProfiles == null)
+{
+    <div class="alert alert-info">Loading Dating Users...</div>
+}
+else
+{
+    <table class="table table-responsive">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Gender</th>
+                <th>Hobby</th>
+                <th>Favourite Song</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var personalprofile in PersonalProfiles)
+            {
+            <tr>
+                <td>@personalprofile.DatingUser.Username</td>
+                <td>@personalprofile.DatingUser.Age</td>
+                <td>@personalprofile.Hobby</td>
+                <td>@personalprofile.FavouriteSong</td>
+                <td>
+                    <a href=" /makes/view/@personalprofile.Id" class=" btn btn-primary">
+                        <span class="oi oi-book"></span>
+                    </a>
+                    <a href=" /makes/edit/@personalprofile.Id" class=" btn btn-warning">
+                        <span class="oi oi-pencil"></span>
+                    </a>
+                    <button class="btn btn-danger" @onclick="@(() => Delete(personalprofile.Id))">
+                        <span class="oi oi-delete"></span>
+                    </button>
+                </td>
+            </tr>
+            }
+
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<PersonalProfile> PersonalProfiles;
+
+    protected async override Task OnInitializedAsync()
+    {
+        PersonalProfiles = await _client.GetFromJsonAsync<List<PersonalProfile>>($"{Endpoints.PersonalProfilesEndpoint}");
+    }
+
+    async Task Delete(int personalprofileId)
+    {
+        var personalprofile = PersonalProfiles.First(q => q.Id == personalprofileId);
+        var confirm = await js.InvokeAsync<bool>("confirm", $"Do you want to delete {personalprofile.Hobby}?");
+        if (confirm)
+        {
+            await _client.DeleteAsync($"{Endpoints.PersonalProfilesEndpoint}/{personalprofileId}");
+            await OnInitializedAsync();
+        }
+    }
+
+}
+
